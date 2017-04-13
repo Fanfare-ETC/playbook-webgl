@@ -24,7 +24,7 @@ if (!global.PlaybookBridge) {
      * @returns {string}
      */
     getSectionAPIUrl: function () {
-      return 'http://localhost:9000';
+      return 'http://localhost:9002';
     },
 
     /**
@@ -321,7 +321,7 @@ class PredictionCorrectOverlay extends PIXI.Container {
     this.text.text = `Prediction correct:\n ${PlaybookEventsFriendlyNames[event]}\n\nYour score is: ${state.score}`;
     this.text.style.fontFamily = 'proxima-nova';
     this.text.style.fontWeight = 'bold';
-    this.text.style.fontSize = 72.0 / window.devicePixelRatio;
+    this.text.style.fontSize = 24.0;
     this.text.style.align = 'center';
     this.addChild(this.text);
   }
