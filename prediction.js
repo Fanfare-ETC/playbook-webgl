@@ -20,6 +20,23 @@ if (!global.PlaybookBridge) {
     },
 
     /**
+     * Returns the URL of the Section API server.
+     * @returns {string}
+     */
+    getSectionAPIUrl: function () {
+      return 'http://localhost:9000';
+    },
+
+    /**
+     * Returns the ID of the current player.
+     * This is stubbed.
+     * @returns {string}
+     */
+    getPlayerID: function () {
+      return 1;
+    },
+
+    /**
      * Notifies the hosting application of the new state of the game.
      * This is a no-op for the mock bridge.
      * @type {string} stateJSON
@@ -234,6 +251,7 @@ function handlePlaysCreated(events) {
     const plays = events.map(PlaybookEvents.getById);
     for (const play of plays) {
       state.score += ScoreValues[play];
+      reportScore(ScoreValues[play]);
       const overlay = new PredictionCorrectOverlay(play);
       initPredictionCorrectOverlayEvents(overlay);
       stage.addChild(overlay);
@@ -254,6 +272,21 @@ function handleClearPredictions() {
   });
 
   state.stage = GameStages.INITIAL;
+}
+
+/**
+ * Report a scoring event to the server.
+ * @param {number} score
+ */
+function reportScore(score) {
+  const request = new XMLHttpRequest();
+  request.open('POST', `${PlaybookBridge.getSectionAPIUrl()}/updateScore`);
+  request.setRequestHeader('Content-Type', 'application/json');
+  request.send(JSON.stringify({
+    cat: 'predict',
+    predictScore: score,
+    id: PlaybookBridge.getPlayerID()
+  }));
 }
 
 /**
