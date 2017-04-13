@@ -264,11 +264,14 @@ function handlePlaysCreated(events) {
  * Handle clear predictions event.
  */
 function handleClearPredictions() {
+  const fieldOverlay = stage.getChildByName('fieldOverlay');
+  const ballSlot = stage.getChildByName('ballSlot');
+  renderer.resetLastRenderTime = true;
   state.balls.forEach((ball, i) => {
-    const fieldOverlay = stage.getChildByName('fieldOverlay');
-    const ballSlot = stage.getChildByName('ballSlot');
-    undoPrediction(state, ball.selectedTarget, ball);
-    ball.moveToSlot(ballSlot, i);
+    if (ball.selectedTarget !== null) {
+      undoPrediction(state, ball.selectedTarget, ball);
+      ball.moveToSlot(ballSlot, i);
+    }
   });
 
   state.stage = GameStages.INITIAL;
@@ -986,9 +989,9 @@ function setup() {
       fieldOverlay.update();
       renderer.render(stage);
       renderer.isDirty = false;
-      lastRenderTime = now;
     }
 
+    lastRenderTime = now;
     requestAnimationFrame(beginDrawLoop);
   };
 
