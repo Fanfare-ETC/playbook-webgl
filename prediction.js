@@ -82,29 +82,30 @@ const GameStages = {
 };
 
 const ScoreValues = {
-  SHUTOUT_INNING: 4,
-  RUN_SCORED: 4,
-  FLY_OUT: 2,
-  TRIPLE_PLAY: 1400,
-  DOUBLE_PLAY: 20,
-  GROUND_OUT: 2,
-  STEAL: 5,
-  PICK_OFF: 7,
-  WALK: 3,
-  BLOCKED_RUN: 10,
-  STRIKEOUT: 2,
-  HIT_BY_PITCH: 2,
-  HOME_RUN: 10,
-  PITCH_COUNT_16: 2,
-  PITCH_COUNT_17: 2,
-  SINGLE: 3,
-  DOUBLE: 5,
-  TRIPLE: 20,
-  BATTER_COUNT_4: 2,
-  BATTER_COUNT_5: 2,
-  MOST_IN_LEFT_OUTFIELD: 2,
-  MOST_IN_RIGHT_OUTFIELD: 2,
-  MOST_IN_INFIELD: 2
+  [PlaybookEvents.NO_RUNS]: 4,
+  [PlaybookEvents.RUN_SCORED]: 4,
+  [PlaybookEvents.FLY_OUT]: 2,
+  [PlaybookEvents.TRIPLE_PLAY]: 1400,
+  [PlaybookEvents.DOUBLE_PLAY]: 20,
+  [PlaybookEvents.GROUND_OUT]: 2,
+  [PlaybookEvents.STEAL]: 5,
+  [PlaybookEvents.PICK_OFF]: 7,
+  [PlaybookEvents.WALK]: 3,
+  [PlaybookEvents.BLOCKED_RUN]: 10,
+  [PlaybookEvents.STRIKEOUT]: 2,
+  [PlaybookEvents.HIT_BY_PITCH]: 2,
+  [PlaybookEvents.HOME_RUN]: 10,
+  [PlaybookEvents.PITCH_COUNT_16]: 2,
+  [PlaybookEvents.PITCH_COUNT_17]: 2,
+  [PlaybookEvents.SINGLE]: 3,
+  [PlaybookEvents.DOUBLE]: 5,
+  [PlaybookEvents.TRIPLE]: 20,
+  [PlaybookEvents.BATTER_COUNT_4]: 2,
+  [PlaybookEvents.BATTER_COUNT_5]: 2,
+  [PlaybookEvents.MOST_FIELDED_BY_LEFT]: 2,
+  [PlaybookEvents.MOST_FIELDED_BY_RIGHT]: 2,
+  [PlaybookEvents.MOST_FIELDED_BY_INFIELDERS]: 2,
+  [PlaybookEvents.MOST_FIELDED_BY_CENTER]: 2
 };
 
 /**
@@ -727,7 +728,7 @@ function createFieldOverlay(balls) {
       720.0, 1090.0,
       640.0, 1060.0
     ]),
-    [PlaybookEvents.MOST_IN_INFIELD]: new PIXI.Polygon([
+    [PlaybookEvents.MOST_FIELDED_BY_INFIELDERS]: new PIXI.Polygon([
       12.0, 966.0,
       172.0, 966.0,
       720.0, 422.0,
@@ -748,7 +749,7 @@ function createFieldOverlay(balls) {
       134.0, 562.0,
       42.0, 766.0
     ]),
-    [PlaybookEvents.MOST_IN_RIGHT_OUTFIELD]: new PIXI.Polygon([
+    [PlaybookEvents.MOST_FIELDED_BY_RIGHT]: new PIXI.Polygon([
       1428.0, 830.0,
       1428.0, 12.0,
       728.0, 12.0,
@@ -757,7 +758,7 @@ function createFieldOverlay(balls) {
       1126.0, 376.0,
       1328.0, 568.0
     ]),
-    [PlaybookEvents.MOST_IN_LEFT_OUTFIELD]: new PIXI.Polygon([
+    [PlaybookEvents.MOST_FIELDED_BY_LEFT]: new PIXI.Polygon([
       12.0, 830.0,
       112.0, 568.0,
       314.0, 376.0,
@@ -766,7 +767,7 @@ function createFieldOverlay(balls) {
       712.0, 12.0,
       12.0, 12.0
     ]),
-    [PlaybookEvents.SHUTOUT_INNING]: new PIXI.Polygon([
+    [PlaybookEvents.NO_RUNS]: new PIXI.Polygon([
       726.0, 442.0,
       726.0, 696.0,
       916.0, 778.0,
@@ -781,18 +782,18 @@ function createFieldOverlay(balls) {
       714.0, 696.0
     ]),
     [PlaybookEvents.FLY_OUT]: new PIXI.Polygon([
-      726.0, 1526.0,
-      1252.0, 978.0,
-      1000.0, 978.0,
-      920.0, 1168.0,
-      726.0, 1250.0
-    ]),
-    [PlaybookEvents.GROUND_OUT]: new PIXI.Polygon([
       714.0, 1526.0,
       714.0, 1250.0,
       520.0, 1168.0,
       440.0, 978.0,
       188.0, 978.0
+    ]),
+    [PlaybookEvents.GROUND_OUT]: new PIXI.Polygon([
+      726.0, 1526.0,
+      1252.0, 978.0,
+      1000.0, 978.0,
+      920.0, 1168.0,
+      726.0, 1250.0
     ]),
     [PlaybookEvents.BATTER_COUNT_5]: new PIXI.Polygon([
       1010.0, 1242.0,
