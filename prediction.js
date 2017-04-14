@@ -209,7 +209,10 @@ class GameState {
 }
 
 const connection = new WebSocket(PlaybookBridge.getAPIUrl());
-const renderer = PIXI.autoDetectRenderer(1080, 1920, { resolution: window.devicePixelRatio });
+const renderer = PIXI.autoDetectRenderer(1080, 1920, {
+  resolution: window.devicePixelRatio,
+  transparent: true
+});
 const stage = new PIXI.Container();
 const state = new GameState();
 
@@ -1034,13 +1037,6 @@ function undoPrediction(state, area, ball) {
 }
 
 function setup() {
-  // Add grass to screen.
-  const grassTexture = PIXI.loader.resources['resources/Prediction-BG-Grass.jpg'].texture;
-  const grass = new PIXI.Sprite(grassTexture);
-  grass.scale.x = window.innerWidth / grassTexture.width;
-  grass.scale.y = window.innerHeight / grassTexture.height;
-  stage.addChild(grass);
-
   // Add banner on top to screen.
   const bannerTexture = PIXI.loader.resources['resources/Prediction-Banner.png'].texture
   const banner = new PIXI.Sprite(bannerTexture);
@@ -1144,7 +1140,6 @@ configureWebSocket(connection);
 
 // Load the sprites we need.
 PIXI.loader
-  .add('resources/Prediction-BG-Grass.jpg')
   .add('resources/Prediction-Banner.png')
   .add('resources/Prediction-Holder-BallsSlot.png')
   .add('resources/Prediction-Button-Continue.png')
