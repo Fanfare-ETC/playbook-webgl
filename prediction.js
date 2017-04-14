@@ -113,8 +113,11 @@ const ScoreValues = {
  */
 class GameState {
   constructor() {
+    this.EVENT_STAGE_CHANGED = 'stageChanged';
+    this.EVENT_PREDICTION_COUNTS_CHANGED = 'predictionCountsChanged';
+
     /** @type {Object.<string, number>} */
-    this.predictionCounts = {};
+    this._predictionCounts = {};
 
     /** @type {string} */
     this._stage = GameStages.INITIAL;
@@ -148,6 +151,24 @@ class GameState {
   }
 
   /**
+   * @returns {Object.<string, number>}
+   */
+  get predictionCounts() {
+    return this._predictionCounts;
+  }
+
+  /**
+   * @param {Object.<string, number>}
+   */
+  set predictionCounts(value) {
+    const oldValue = this._predictionCounts;
+    this._predictionCounts = value;
+    console.log('predictionCounts->', value);
+    this.emitter.emit(this.EVENT_PREDICTION_COUNTS_CHANGED, value, oldValue);
+    PlaybookBridge.notifyGameState(this.toJSON());
+  }
+
+  /**
    * Returns the game state as JSON.
    * @returns {string}
    */
@@ -176,8 +197,8 @@ class GameState {
     restoredState.balls.forEach((ball, i) => {
       if (ball.selectedTarget !== null) {
         const area = fieldOverlay.getChildByName(ball.selectedTarget);
-        this.balls[i].moveToField(area, false);
         makePrediction(this, area, this.balls[i]);
+        this.balls[i].moveToField(area, false);
       }
     });
 
@@ -348,6 +369,27 @@ class FieldOverlay extends PIXI.Sprite {
     /** @type {Array.<Ball>} */
     this._balls = balls;
 
+    // When prediction count changes, we need to update the ball counts.
+    state.emitter.on(state.EVENT_PREDICTION_COUNTS_CHANGED, (value, oldValue) => {
+      const events = new Set(Object.keys(value));
+      const oldEvents = new Set(Object.keys(oldValue));
+
+      // Compute the difference between the two counts.
+      const changed = [...events].filter(x => oldEvents.has(x));
+      changed.forEach(name => {
+        const area = this.getAreaByName(name);
+        const count = value[name];
+        if (count > 1) {
+          const texture = PIXI.loader.resources[`resources/Item-Ball-x${count}.png`].texture;
+          area.ballCountSprite.count = count;
+          area.ballCountSprite.visible = true;
+        } else {
+          area.ballCountSprite.visible = false;
+        }
+        renderer.isDirty = true;
+      });
+    });
+
     Object.keys(areas).forEach(event => {
       const points = areas[event].points.map((point, index) => {
         if (index % 2 === 0) {
@@ -368,8 +410,8 @@ class FieldOverlay extends PIXI.Sprite {
       const moveNextBallToField = () => {
         const nextBall = balls.find(ball => ball.selectedTarget === null);
         if (nextBall !== undefined) {
-          nextBall.moveToField(area);
           makePrediction(state, area, nextBall);
+          nextBall.moveToField(area);
         }
       }
 
@@ -419,6 +461,52 @@ class FieldOverlay extends PIXI.Sprite {
 }
 
 /**
+ * Ball count sprite.
+ */
+class BallCountSprite extends PIXI.Sprite {
+  /**
+   * Creates a sprite that is used to represent the number of balls in a
+   * specific area.
+   * @param {FieldOverlay} fieldOverlay
+   * @param {FieldOverlayArea} area
+   * @param {PIXI.Sprite} ballSprite
+   */
+  constructor(fieldOverlay, area, ballSprite) {
+    super();
+
+    // Setup the sprite with an appropriate scale and location.
+    const centroid = fieldOverlay.toGlobal(area.getCentroid());
+    this.scale.set(ballSprite.scale.x, ballSprite.scale.y);
+    this.position.set(centroid.x, centroid.y);
+    this.anchor.set(0.5, 0.5);
+
+    // Listen for confirmed event.
+    state.emitter.on(state.EVENT_STAGE_CHANGED, (value) => {
+      if (value === GameStages.CONFIRMED) {
+        this.tint = 0x999999;
+      } else {
+        this.tint = 0xffffff;
+      }
+    });
+
+    /** @type {number} */
+    this._count = 0;
+  }
+
+  /** @param {number} value */
+  set count(value) {
+    if (value > 1) {
+      const texture = PIXI.loader.resources[`resources/Item-Ball-x${value}.png`].texture;
+      this.texture = texture;
+    } else {
+      this.texture = null;
+    }
+
+    this._count = value;
+  }
+}
+
+/**
  * Field overlay highlighted area.
  */
 class FieldOverlayArea extends PIXI.Graphics {
@@ -429,6 +517,9 @@ class FieldOverlayArea extends PIXI.Graphics {
   constructor(area) {
     super();
     this.hitArea = area;
+
+    /** @type {BallCountSprite} */
+    this.ballCountSprite = null;
 
     /** @type {PIXI.Point} */
     this.centroidOffset = new PIXI.Point(0, 0);
@@ -577,6 +668,20 @@ class Ball {
 }
 
 /**
+ * Set up events for ball counts.
+ * @param {FieldOverlay} fieldOverlay
+ * @param {PIXI.Sprite} ballSprite
+ * @return {Array.<BallCountSprite>} ballCountSprites
+ */
+function createBallCountSprites(fieldOverlay, ballSprite) {
+  return fieldOverlay.children.map(area => {
+    const sprite = new BallCountSprite(fieldOverlay, area, ballSprite);
+    area.ballCountSprite = sprite;
+    return sprite;
+  });
+}
+
+/**
  * Sets up events for a ball.
  * @param {Ball} ball
  * @param {PIXI.Sprite} ballSlot
@@ -638,8 +743,8 @@ function initBallEvents(ball, ballSlot, fieldOverlay) {
 
     // If there's a drag target, move the ball there.
     if (ball.dragTarget) {
-      ball.moveToField(ball.dragTarget);
       makePrediction(state, ball.dragTarget, ball);
+      ball.moveToField(ball.dragTarget);
     } else if (ball.selectedTarget &&
                ballSlot.getBounds().contains(e.data.global.x, e.data.global.y)) {
       undoPrediction(state, ball.selectedTarget, ball);
@@ -887,12 +992,13 @@ function makePrediction(state, area, ball) {
   }
 
   ball.selectedTarget = area;
+  const predictionCounts = Object.assign({}, state.predictionCounts);
 
-  if (state.predictionCounts[area.name] === undefined) {
-    state.predictionCounts[area.name] = 0;
+  if (predictionCounts[area.name] === undefined) {
+    predictionCounts[area.name] = 0;
   }
 
-  state.predictionCounts[area.name]++;
+  predictionCounts[area.name]++;
 
   // Check if all the balls have selected targets.
   if (state.balls.every(ball => ball.selectedTarget)) {
@@ -901,8 +1007,7 @@ function makePrediction(state, area, ball) {
     stage.stage = GameStages.INITIAL;
   }
 
-  PlaybookBridge.notifyGameState(state.toJSON());
-  console.log('makePrediction->', state.predictionCounts);
+  state.predictionCounts = predictionCounts;
 }
 
 /**
@@ -912,9 +1017,10 @@ function makePrediction(state, area, ball) {
  * @param {Ball} ball
  */
 function undoPrediction(state, area, ball) {
-  state.predictionCounts[area.name]--;
-  if (state.predictionCounts[area.name] === 0) {
-    delete state.predictionCounts[area.name];
+  const predictionCounts = Object.assign({}, state.predictionCounts);
+  predictionCounts[area.name]--;
+  if (predictionCounts[area.name] === 0) {
+    delete predictionCounts[area.name];
   }
 
   ball.selectedTarget = null;
@@ -924,8 +1030,7 @@ function undoPrediction(state, area, ball) {
     state.stage = GameStages.INITIAL;
   }
 
-  PlaybookBridge.notifyGameState(state.toJSON());
-  console.log('undoPrediction->', state.predictionCounts);
+  state.predictionCounts = predictionCounts;
 }
 
 function setup() {
@@ -934,7 +1039,6 @@ function setup() {
   const grass = new PIXI.Sprite(grassTexture);
   grass.scale.x = window.innerWidth / grassTexture.width;
   grass.scale.y = window.innerHeight / grassTexture.height;
-  grass.zOrder = 0;
   stage.addChild(grass);
 
   // Add banner on top to screen.
@@ -943,7 +1047,6 @@ function setup() {
   const bannerScale = window.innerWidth / bannerTexture.width;
   const bannerHeight = bannerScale * bannerTexture.height;
   banner.scale.set(bannerScale, bannerScale);
-  banner.zOrder = 1;
   stage.addChild(banner);
 
   // Add ball slot to screen.
@@ -954,7 +1057,6 @@ function setup() {
   ballSlot.name = 'ballSlot';
   ballSlot.position.set(0, window.innerHeight - ballSlotHeight);
   ballSlot.scale.set(ballSlotScale, ballSlotScale);
-  ballSlot.zOrder = 2;
   stage.addChild(ballSlot);
 
   // Add overlay to screen.
@@ -970,7 +1072,6 @@ function setup() {
   );
   fieldOverlay.scale.set(fieldOverlayScale, fieldOverlayScale);
   fieldOverlay.anchor.set(0.5, 0.5);
-  fieldOverlay.zOrder = 2;
   stage.addChild(fieldOverlay);
 
   // Add balls to scene.
@@ -982,7 +1083,6 @@ function setup() {
     ballSprite.anchor.set(0.5, 0.5);
     ballSprite.scale.set(ballScale, ballScale);
     ballSprite.position.set(ballPosition.x, ballPosition.y);
-    ballSprite.zOrder = 3;
 
     const ball = new Ball();
     ball.sprite = ballSprite;
@@ -990,6 +1090,12 @@ function setup() {
 
     initBallEvents(ball, ballSlot, fieldOverlay);
     stage.addChild(ballSprite);
+  }
+
+  // Add ball counts to overlay areas.
+  const ballCountSprites = createBallCountSprites(fieldOverlay, state.balls[0].sprite);
+  for (const sprite of ballCountSprites) {
+    stage.addChild(sprite);
   }
 
   // Add continue banner.
@@ -1044,5 +1150,9 @@ PIXI.loader
   .add('resources/Prediction-Button-Continue.png')
   .add('resources/Prediction-Overlay.png')
   .add('resources/Item-Ball.png')
+  .add('resources/Item-Ball-x2.png')
+  .add('resources/Item-Ball-x3.png')
+  .add('resources/Item-Ball-x4.png')
+  .add('resources/Item-Ball-x5.png')
   .add('resources/Item-Ball-Rotated.png')
   .load(setup);
