@@ -272,8 +272,8 @@ function handlePlaysCreated(events) {
   if (state.stage === GameStages.CONFIRMED) {
     const plays = events.map(PlaybookEvents.getById);
     for (const play of plays) {
-      state.score += ScoreValues[play];
-      reportScore(ScoreValues[play]);
+      state.score += ScoreValues[play] * state.predictionCounts[play];
+      reportScore(ScoreValues[play] * state.predictionCounts[play]);
       const overlay = new PredictionCorrectOverlay(play);
       initPredictionCorrectOverlayEvents(overlay);
       stage.addChild(overlay);
