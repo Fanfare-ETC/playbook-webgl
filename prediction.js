@@ -42,7 +42,7 @@ if (!global.PlaybookBridge) {
      * @type {string} stateJSON
      */
     notifyGameState: function (stateJSON) {
-      console.log('Saving state: ' , stateJSON);
+      console.log('Saving state: ', stateJSON);
       localStorage.setItem('prediction', stateJSON);
     },
 
@@ -399,6 +399,15 @@ class FieldOverlay extends PIXI.Sprite {
     });
   }
 
+  /**
+   * Retrieves an overlay area given a name.
+   * @param {string} name
+   * @returns {FieldOverlayArea?}
+   */
+  getAreaByName(name) {
+    return this.children.find(child => child.name === name);
+  }
+
   update() {
     // Unhighlight all field overlays.
     this.clearHighlightAreas();
@@ -420,6 +429,9 @@ class FieldOverlayArea extends PIXI.Graphics {
   constructor(area) {
     super();
     this.hitArea = area;
+
+    /** @type {PIXI.Point} */
+    this.centroidOffset = new PIXI.Point(0, 0);
 
     /** @type {bool} */
     this._highlighted = false;
@@ -479,6 +491,9 @@ class FieldOverlayArea extends PIXI.Graphics {
     }
     centroid.x /= area * 6;
     centroid.y /= area * 6;
+
+    centroid.x += this.centroidOffset.x;
+    centroid.y += this.centroidOffset.y;
     return centroid;
   }
 }
@@ -664,11 +679,11 @@ function initContinueBannerEvents(continueBanner) {
  * Initializes events for the prediction correct overlay.
  */
 function initPredictionCorrectOverlayEvents(overlay) {
-    overlay.interactive = true;
-    overlay.on('tap', () => {
-      overlay.destroy();
-      renderer.isDirty = true;
-    });
+  overlay.interactive = true;
+  overlay.on('tap', () => {
+    overlay.destroy();
+    renderer.isDirty = true;
+  });
 }
 
 /**
@@ -759,7 +774,7 @@ function createFieldOverlay(balls) {
       1276.0, 12.0
     ]),
     [PlaybookEvents.MOST_FIELDED_BY_CENTER]: new PIXI.Polygon([
-      176.0,  12.0,
+      176.0, 12.0,
       1264.0, 12.0,
       1072.0, 342.0,
       932.0, 282.0,
@@ -836,7 +851,13 @@ function createFieldOverlay(balls) {
     ])
   };
 
-  return new FieldOverlay(areas, balls);
+  const fieldOverlay = new FieldOverlay(areas, balls);
+
+  // The infield area is concave - provide a centroid offset.
+  const infieldArea = fieldOverlay.getAreaByName(PlaybookEvents.MOST_FIELDED_BY_INFIELDERS);
+  infieldArea.centroidOffset = new PIXI.Point(0, -246.0);
+
+  return fieldOverlay;
 };
 
 /**
