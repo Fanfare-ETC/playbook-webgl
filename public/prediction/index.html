@@ -11,17 +11,49 @@
         font-style: normal;
       }
 
+      @font-face {
+        font-family: 'proxima-nova-excn';
+        src: url('resources/proxima-nova-excn-black.woff2');
+        font-variant: normal;
+        font-weight: 900;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: 'SCOREBOARD';
+        src: url('resources/SCOREBOARD.woff2');
+        font-variant: normal;
+        font-weight: normal;
+        font-style: normal;
+      }
+
       body {
-        font-family: 'proxima-nova', sans-serif;
-        background: url('resources/Prediction-BG-Grass.jpg');
-        background-size: cover;
-        background-attachment: fixed;
         margin: 0;
         padding: 0;
+      }
+
+      .webfont-loading-hack {
+        position: absolute;
+        color: rgba(255, 255, 255, 0);
+      }
+
+      .webfont-loading-hack-proxima-nova {
+        font-family: 'proxima-nova';
+      }
+
+      .webfont-loading-hack-proxima-nova-excn {
+        font-family: 'proxima-nova-excn';
+      }
+
+      .webfont-loading-hack-SCOREBOARD {
+        font-family: 'SCOREBOARD';
       }
     </style>
   </head>
   <body>
+    <div class="webfont-loading-hack webfont-loading-hack-proxima-nova">X</div>
+    <div class="webfont-loading-hack webfont-loading-hack-proxima-nova-excn">&#8882;</div>
+    <div class="webfont-loading-hack webfont-loading-hack-SCOREBOARD">X</div>
     <script src="prediction.js"></script>
   </body>
 </html>

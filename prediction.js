@@ -1037,6 +1037,13 @@ function undoPrediction(state, area, ball) {
 }
 
 function setup() {
+  // Add grass to screen.
+  const grassTexture = PIXI.loader.resources['resources/Prediction-BG-Grass.jpg'].texture;
+  const grass = new PIXI.Sprite(grassTexture);
+  grass.scale.x = window.innerWidth / grassTexture.width;
+  grass.scale.y = window.innerHeight / grassTexture.height;
+  stage.addChild(grass);
+
   // Add banner on top to screen.
   const bannerTexture = PIXI.loader.resources['resources/Prediction-Banner.png'].texture
   const banner = new PIXI.Sprite(bannerTexture);
@@ -1105,6 +1112,69 @@ function setup() {
   initContinueBannerEvents(continueBanner);
   stage.addChild(continueBanner);
 
+  // Add score tab.
+  const scoreTabTexture = PIXI.loader.resources['resources/Prediction-Scoretab.png'].texture;
+  const scoreTab = new PIXI.Sprite(scoreTabTexture);
+  const scoreTabScale = ballSlot.height / scoreTabTexture.height;
+  scoreTab.scale.set(scoreTabScale, scoreTabScale);
+  scoreTab.position.set(0, ballSlot.position.y - scoreTab.height);
+  stage.addChild(scoreTab);
+
+  const scoreTabLabel = new PIXI.Text('Score:'.toUpperCase());
+  const scoreTabLabelFontSize = 32.0;
+  const scoreTabLabelScale = ((scoreTab.height / 2 - 8.0) / scoreTabLabelFontSize) * (1 / scoreTabScale);
+  scoreTabLabel.style.fill = 0xffffff;
+  scoreTabLabel.style.fontSize = scoreTabLabelFontSize;
+  scoreTabLabel.style.fontFamily = 'proxima-nova-excn';
+  scoreTabLabel.style.fontWeight = 900;
+  scoreTabLabel.anchor.set(0.0, 1.0);
+  scoreTabLabel.position.set(16.0 * scoreTabLabelScale, scoreTabTexture.height / 2);
+  scoreTabLabel.scale.set(scoreTabLabelScale, scoreTabLabelScale);
+  scoreTab.addChild(scoreTabLabel);
+
+  const score = new PIXI.Text('000');
+  const scoreScale = scoreTabLabelScale;
+  score.style.fill = 0xffffff;
+  score.style.fontSize = 32.0;
+  score.style.fontFamily = 'SCOREBOARD';
+  score.anchor.set(0.0, 0.0);
+  score.position.set(16.0 * scoreScale, scoreTabTexture.height / 2);
+  score.scale.set(scoreScale, scoreScale);
+  scoreTab.addChild(score);
+
+  // Add odds tab.
+  const oddsTabTexture = PIXI.loader.resources['resources/Prediction-Oddstab.png'].texture;
+  const oddsTab = new PIXI.Sprite(oddsTabTexture);
+  const oddsTabScale = ballSlot.height / oddsTabTexture.height;
+  oddsTab.scale.set(oddsTabScale, oddsTabScale);
+  oddsTab.position.set(window.innerWidth - oddsTab.width, ballSlot.position.y - oddsTab.height);
+  stage.addChild(oddsTab);
+
+  const oddsTabLabel = new PIXI.Text('Odds'.toUpperCase());
+  const oddsTabLabelFontSize = 32.0;
+  const oddsTabLabelScale = ((oddsTab.height / 2 - 8.0) / oddsTabLabelFontSize) * (1 / oddsTabScale);
+  oddsTabLabel.style.fill = 0xffffff;
+  oddsTabLabel.style.fontSize = oddsTabLabelFontSize;
+  oddsTabLabel.style.fontFamily = 'proxima-nova-excn';
+  oddsTabLabel.style.fontWeight = 900;
+  oddsTabLabel.anchor.set(1.0, 1.0);
+  oddsTabLabel.position.set((oddsTab.width - 16.0) * (1 / oddsTabScale), oddsTabTexture.height / 2);
+  oddsTabLabel.scale.set(oddsTabLabelScale, oddsTabLabelScale);
+  oddsTab.addChild(oddsTabLabel);
+
+  const oddsTabArrow = new PIXI.Text('\u22b3');
+  const oddsTabArrowScale = oddsTabLabelScale;
+  oddsTabArrow.style.fill = 0xffffff;
+  oddsTabArrow.style.fontSize = 32.0;
+  oddsTabArrow.style.fontFamily = 'proxima-nova-excn';
+  oddsTabArrow.anchor.set(1.0, 0.0);
+  oddsTabArrow.scale.set(-oddsTabArrowScale, oddsTabArrowScale);
+  oddsTabArrow.position.set(
+    (oddsTab.width - 16.0) * (1 / oddsTabScale) - oddsTabArrow.width,
+    (oddsTabTexture.height / 2)
+  );
+  oddsTab.addChild(oddsTabArrow);
+
   /**
    * Begin the animation loop.
    * @param {DOMHighResTimeStamp} now
@@ -1140,10 +1210,13 @@ configureWebSocket(connection);
 
 // Load the sprites we need.
 PIXI.loader
+  .add('resources/Prediction-BG-Grass.jpg')
   .add('resources/Prediction-Banner.png')
   .add('resources/Prediction-Holder-BallsSlot.png')
   .add('resources/Prediction-Button-Continue.png')
   .add('resources/Prediction-Overlay.png')
+  .add('resources/Prediction-Oddstab.png')
+  .add('resources/Prediction-Scoretab.png')
   .add('resources/Item-Ball.png')
   .add('resources/Item-Ball-x2.png')
   .add('resources/Item-Ball-x3.png')
