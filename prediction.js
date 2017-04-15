@@ -115,6 +115,7 @@ class GameState {
   constructor() {
     this.EVENT_STAGE_CHANGED = 'stageChanged';
     this.EVENT_PREDICTION_COUNTS_CHANGED = 'predictionCountsChanged';
+    this.EVENT_SCORE_CHANGED = 'scoreChanged';
 
     /** @type {Object.<string, number>} */
     this._predictionCounts = {};
@@ -126,7 +127,7 @@ class GameState {
     this.balls = new Array();
 
     /** @type {number} */
-    this.score = 0;
+    this._score = 0;
 
     /** @type {EventEmitter} */
     this.emitter = new EventEmitter();
@@ -165,6 +166,24 @@ class GameState {
     this._predictionCounts = value;
     console.log('predictionCounts->', value);
     this.emitter.emit(this.EVENT_PREDICTION_COUNTS_CHANGED, value, oldValue);
+    PlaybookBridge.notifyGameState(this.toJSON());
+  }
+
+  /**
+   * @returns {number}
+   */
+  get score() {
+    return this._score;
+  }
+
+  /**
+   * @param {number} value
+   */
+  set score(value) {
+    const oldValue = this._score;
+    this._score = value;
+    console.log('score->', value);
+    this.emitter.emit(this.EVENT_SCORE_CHANGED, value, oldValue);
     PlaybookBridge.notifyGameState(this.toJSON());
   }
 
@@ -275,12 +294,14 @@ function handlePlaysCreated(events) {
   if (state.stage === GameStages.CONFIRMED) {
     const plays = events.map(PlaybookEvents.getById);
     for (const play of plays) {
-      state.score += ScoreValues[play] * state.predictionCounts[play];
-      reportScore(ScoreValues[play] * state.predictionCounts[play]);
-      const overlay = new PredictionCorrectOverlay(play);
-      initPredictionCorrectOverlayEvents(overlay);
-      stage.addChild(overlay);
-      renderer.isDirty = true;
+      if (state.predictionCounts[play] !== undefined) {
+        state.score += ScoreValues[play] * state.predictionCounts[play];
+        reportScore(ScoreValues[play] * state.predictionCounts[play]);
+        const overlay = new PredictionCorrectOverlay(play);
+        initPredictionCorrectOverlayEvents(overlay);
+        stage.addChild(overlay);
+        renderer.isDirty = true;
+      }
     }
   }
 }
@@ -784,6 +805,17 @@ function initContinueBannerEvents(continueBanner) {
 }
 
 /**
+ * Initializes events for the score.
+ * @param {PIXI.Text} scoreText
+ */
+function initScoreEvents(scoreText) {
+  state.emitter.on(state.EVENT_SCORE_CHANGED, function (score) {
+    scoreText.text = ('000000' + score).substr(-3);
+    renderer.isDirty = true;
+  });
+}
+
+/**
  * Initializes events for the prediction correct overlay.
  */
 function initPredictionCorrectOverlayEvents(overlay) {
@@ -1140,6 +1172,7 @@ function setup() {
   score.anchor.set(0.0, 0.0);
   score.position.set(16.0 * scoreScale, scoreTabTexture.height / 2);
   score.scale.set(scoreScale, scoreScale);
+  initScoreEvents(score);
   scoreTab.addChild(score);
 
   // Add odds tab.
