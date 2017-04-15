@@ -297,12 +297,15 @@ function handlePlaysCreated(events) {
       if (state.predictionCounts[play] !== undefined) {
         state.score += ScoreValues[play] * state.predictionCounts[play];
         reportScore(ScoreValues[play] * state.predictionCounts[play]);
+
         const overlay = new PredictionCorrectOverlay(play);
         const scoreTab = stage.getChildByName('scoreTab');
         const scoreTabGlobalPosition = scoreTab.toGlobal(scoreTab.getChildByName('score').position);
         initPredictionCorrectOverlayEvents(overlay, scoreTabGlobalPosition);
         stage.addChild(overlay);
         renderer.isDirty = true;
+
+        navigator.vibrate(200);
       }
     }
   }
