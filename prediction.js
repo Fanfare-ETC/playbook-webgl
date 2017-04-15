@@ -298,7 +298,9 @@ function handlePlaysCreated(events) {
         state.score += ScoreValues[play] * state.predictionCounts[play];
         reportScore(ScoreValues[play] * state.predictionCounts[play]);
         const overlay = new PredictionCorrectOverlay(play);
-        initPredictionCorrectOverlayEvents(overlay);
+        const scoreTab = stage.getChildByName('scoreTab');
+        const scoreTabGlobalPosition = scoreTab.toGlobal(scoreTab.getChildByName('score').position);
+        initPredictionCorrectOverlayEvents(overlay, scoreTabGlobalPosition);
         stage.addChild(overlay);
         renderer.isDirty = true;
       }
@@ -817,12 +819,29 @@ function initScoreEvents(scoreText) {
 
 /**
  * Initializes events for the prediction correct overlay.
+ * @param {PredictionCorrectOverlay} overlay
+ * @param {PIXI.Point} scoreTextPosition
  */
-function initPredictionCorrectOverlayEvents(overlay) {
+function initPredictionCorrectOverlayEvents(overlay, scoreTextPosition) {
   overlay.interactive = true;
   overlay.on('tap', () => {
-    overlay.destroy();
-    renderer.isDirty = true;
+    const backgroundFadeOut = new PIXI.action.FadeOut(0.25);
+    const backgroundCallFunc = new PIXI.action.CallFunc(() => overlay.destroy());
+    const backgroundSequence = new PIXI.action.Sequence([backgroundFadeOut, backgroundCallFunc]);
+
+    const ballMoveTo = new PIXI.action.MoveTo(
+      scoreTextPosition.x, scoreTextPosition.y, 0.25
+    );
+    const ballScaleTo = new PIXI.action.ScaleTo(0, 0, 0.25);
+    const ballFadeOut = new PIXI.action.FadeOut(0.50);
+
+    PIXI.actionManager.runAction(overlay.ball, ballMoveTo);
+    PIXI.actionManager.runAction(overlay.ball, ballScaleTo);
+    PIXI.actionManager.runAction(overlay.ball, ballFadeOut);
+    PIXI.actionManager.runAction(overlay.text, ballMoveTo);
+    PIXI.actionManager.runAction(overlay.text, ballScaleTo);
+    PIXI.actionManager.runAction(overlay.text, ballFadeOut);
+    PIXI.actionManager.runAction(overlay.background, backgroundSequence);
   });
 }
 
@@ -1148,6 +1167,7 @@ function setup() {
   const scoreTabTexture = PIXI.loader.resources['resources/Prediction-Scoretab.png'].texture;
   const scoreTab = new PIXI.Sprite(scoreTabTexture);
   const scoreTabScale = ballSlot.height / scoreTabTexture.height;
+  scoreTab.name = 'scoreTab';
   scoreTab.scale.set(scoreTabScale, scoreTabScale);
   scoreTab.position.set(0, ballSlot.position.y - scoreTab.height);
   stage.addChild(scoreTab);
@@ -1166,6 +1186,7 @@ function setup() {
 
   const score = new PIXI.Text('000');
   const scoreScale = scoreTabLabelScale;
+  score.name = 'score';
   score.style.fill = 0xffffff;
   score.style.fontSize = 32.0;
   score.style.fontFamily = 'SCOREBOARD';
